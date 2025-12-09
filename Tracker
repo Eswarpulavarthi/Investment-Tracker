@@ -1,0 +1,122 @@
+import random
+import re
+from datetime import datetime
+
+class RealEstateChatbot:
+    def __init__(self):
+        self.greetings = [
+            "Hello! How can I assist you with real estate today?",
+            "Hi there! Looking for investment opportunities?",
+            "Welcome! How can I help with your property needs?"
+        ]
+
+        self.property_types = ["Apartment", "House", "Condo", "Townhouse", "Studio"]
+
+        self.sample_properties = {
+            "Apartment": {"price": 250000, "roi": 5.2, "location": "Downtown"},
+            "House": {"price": 450000, "roi": 4.8, "location": "Suburbs"},
+            "Condo": {"price": 320000, "roi": 5.5, "location": "City Center"},
+            "Townhouse": {"price": 380000, "roi": 4.9, "location": "Near Park"},
+            "Studio": {"price": 200000, "roi": 6.0, "location": "City Outskirts"}
+        }
+
+        self.trends = {
+            "market": "The real estate market is showing a 3% growth this quarter.",
+            "interest_rates": "Current interest rates are at 4.5%, expected to rise slightly.",
+            "demand": "High demand for condos in urban areas."
+        }
+
+    def greet(self):
+        return random.choice(self.greetings)
+
+    def detect_intent(self, msg):
+        if re.search(r"(recommend|property|suggest|show)", msg):
+            return 'recommend'
+        if re.search(r"(trend|insight|update|market)", msg):
+            return 'insight'
+        if re.search(r"(investment|track|roi)", msg):
+            return 'track'
+        if re.search(r"(exit|bye|quit)", msg):
+            return 'exit'
+        return 'unknown'
+
+    def extract_budget(self, text):
+        nums = re.findall(r"\d+", text)
+        return float(nums[0]) if nums else None
+
+    def get_property_recommendation(self, budget=None, pref_type=None):
+        if budget:
+            available = {
+                k: v for k, v in self.sample_properties.items()
+                if v["price"] <= budget
+            }
+            if not available:
+                return "No properties fit your budget."
+        else:
+            available = self.sample_properties
+
+        if pref_type:
+            pref_type = pref_type.capitalize()
+            if pref_type in available:
+                prop = available[pref_type]
+                return f"I recommend a {pref_type}: Price ${prop['price']}, ROI {prop['roi']}%, Location {prop['location']}"
+
+        prop_type = random.choice(list(available.keys()))
+        prop = available[prop_type]
+        return f"I recommend a {prop_type}: Price ${prop['price']}, ROI {prop['roi']}%, Location {prop['location']}"
+
+    def get_investment_insight(self):
+        return random.choice(list(self.trends.values()))
+
+    def track_investment(self, property_type, investment_amount):
+        property_type = property_type.capitalize()
+        if property_type not in self.sample_properties:
+            return "Invalid type. Choose from: " + ", ".join(self.property_types)
+
+        prop = self.sample_properties[property_type]
+        roi = prop["roi"]
+        yearly_return = (investment_amount * roi) / 100
+        today = datetime.today().strftime('%Y-%m-%d')
+
+        return (
+            f"As of {today}, investing ${investment_amount} in a {property_type} yields:\n"
+            f"Expected yearly return: ${yearly_return:.2f} (ROI: {roi}%)"
+        )
+
+    def chat(self):
+        print(self.greet())
+        while True:
+            msg = input("You: ").lower().strip()
+
+            intent = self.detect_intent(msg)
+
+            if intent == "exit":
+                print("Chatbot: Goodbye! Happy investing!")
+                break
+
+            elif intent == "recommend":
+                budget = self.extract_budget(msg)
+                pref = None
+                for p in self.property_types:
+                    if p.lower() in msg:
+                        pref = p
+                        break
+                print("Chatbot:", self.get_property_recommendation(budget, pref))
+
+            elif intent == "insight":
+                print("Chatbot:", self.get_investment_insight())
+
+            elif intent == "track":
+                t = input("Enter property type: ")
+                try:
+                    amt = float(input("Investment amount: "))
+                    print("Chatbot:", self.track_investment(t, amt))
+                except:
+                    print("Chatbot: Invalid amount.")
+
+            else:
+                print("Chatbot: I can recommend properties, track investments, or show market trends.")
+
+if __name__ == "__main__":
+    bot = RealEstateChatbot()
+    bot.chat()
